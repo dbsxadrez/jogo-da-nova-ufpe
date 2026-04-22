@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Nova - TCC</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            padding-bottom: 60px; /* Espaço para o rodapé */
+        }
+
+        h1 { color: #2c3e50; margin-bottom: 20px; font-size: 2.5em; }
+
+        /* Telas do Jogo */
+        #menu-container, #game-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        #game-container { display: none; }
+
+        .btn-nivel {
+            display: block;
+            width: 80%;
+            margin: 15px auto;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            color: white;
+        }
+
+        .btn-facil { background-color: #27ae60; }
+        .btn-medio { background-color: #f39c12; }
+        .btn-dificil { background-color: #e74c3c; }
+        .btn-nivel:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+        #status {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2980b9;
+            min-height: 30px;
+            margin-bottom: 15px;
+        }
+
+        .painel-controle {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            min-height: 80px;
+        }
+
+        input[type="number"] {
+            padding: 10px;
+            font-size: 1em;
+            width: 100px;
+            border: 2px solid #bdc3c7;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover { background-color: #2980b9; }
+
+        .btn-dado {
+            background-color: #8e44ad;
+            font-size: 1.5em;
+            margin: 5px;
+            width: 60px;
+        }
+
+        #tabuleiro {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .casa {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.1);
+            position: relative;
+            transition: transform 0.1s;
+        }
+
+        .casa:active { transform: scale(0.95); }
+
+        .facil { background-color: #d4efdf; border: 2px solid #27ae60; color: #2ecc71;} 
+        .medio { background-color: #fdebd0; border: 2px solid #f39c12; color: #f1c40f;} 
+        .dificil { background-color: #fadbd8; border: 2px solid #e74c3c; color: #e74c3c;} 
+        
+        .ocupada {
+            background-color: #bdc3c7;
+            color: #2c3e50;
+            border: 2px solid #7f8c8d;
+            box-shadow: none;
+        }
+
+        .dica-resto {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            font-size: 0.3em;
+            color: #7f8c8d;
+        }
+
+        /* Novo Rodapé Discreto */
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px 0;
+            font-size: 0.85em;
+            color: #7f8c8d;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+        }
+        
+        footer strong { color: #2c3e50; }
+    </style>
+</head>
+<body>
+
+    <div id="menu-container">
+        <h1>Jogo da Nova</h1>
+        
+        <h2>Escolha a Dificuldade</h2>
+        <p style="color: #7f8c8d; font-size: 0.9em; margin-bottom: 20px;">
+            A dificuldade altera a probabilidade dos restos exigidos no tabuleiro.
+        </p>
+        
+        <button class="btn-nivel btn-facil" onclick="iniciarJogo('facil')">
+            Nível Fácil<br><span style="font-size: 0.6em; font-weight: normal;">(Foco em restos 0, 1 e 2)</span>
+        </button>
+        <button class="btn-nivel btn-medio" onclick="iniciarJogo('medio')">
+            Nível Médio<br><span style="font-size: 0.6em; font-weight: normal;">(Desafio equilibrado sem resto 5)</span>
+        </button>
+        <button class="btn-nivel btn-dificil" onclick="iniciarJogo('dificil')">
+            Nível Difícil<br><span style="font-size: 0.6em; font-weight: normal;">(Foco extremo em restos 3, 4 e 5)</span>
+        </button>
+    </div>
+
+    <div id="game-container">
+        <h1 id="titulo-jogo">Jogo da Nova</h1>
+        <div id="status">Vez do Jogador X</div>
+
+        <div class="painel-controle" id="painel"></div>
+        <div id="tabuleiro"></div>
+        
+        <button style="margin-top: 20px; background-color: #7f8c8d;" onclick="location.reload()">Voltar ao Menu</button>
+    </div>
+
+    <footer>
+        Desenvolvido no curso de Licenciatura em Matemática (<strong>UFPE</strong>) por <strong>Douglas Barbosa da Silva, Eric Barbosa de Souza e Marcelo Guimarães</strong>.<br>
+        Orientação: <strong>Profa. Dra. Verônica Gitirana</strong> (Metodologia II).
+    </footer>
+
+    <script>
+        // --- Dicionário de Layouts Simétricos Atualizado ---
+        const layouts = {
+            facil: { 
+                1: 0, 2: 1, 3: 0, 
+                4: 2, 5: 0, 6: 2, 
+                7: 0, 8: 1, 9: 0 
+            },
+            medio: { 
+                // Novo layout médio: Simétrico, desafiador, mas sem o "gargalo" do 5
+                1: 0, 2: 3, 3: 1, 
+                4: 2, 5: 4, 6: 2, 
+                7: 1, 8: 3, 9: 0 
+            },
+            dificil: { 
+                1: 3, 2: 4, 3: 3, 
+                4: 5, 5: 0, 6: 5, 
+                7: 2, 8: 4, 9: 2 
+            }
+        };
+
+        let layoutAtual;
+        let board = { 1: "", 2: "", 3: "", 4: "", 5: "", 6: "", 7: "", 8: "", 9: "" };
+        let turno = 0;
+        let jogadores = ["X", "O"];
+        let estadoAtual = "DIVIDENDO"; 
+        
+        let dadosSorteados = [];
+        let dividendoAtual = 0;
+        let divisorEscolhido = 0;
+        let restoCorreto = 0;
+
+        const menuContainer = document.getElementById("menu-container");
+        const gameContainer = document.getElementById("game-container");
+        const painel = document.getElementById("painel");
+        const status = document.getElementById("status");
+        const tabuleiroDiv = document.getElementById("tabuleiro");
+        const tituloJogo = document.getElementById("titulo-jogo");
+
+        function iniciarJogo(dificuldade) {
+            layoutAtual = layouts[dificuldade];
+            
+            let nomeNivel = dificuldade.charAt(0).toUpperCase() + dificuldade.slice(1);
+            tituloJogo.innerText = `Jogo da Nova - ${nomeNivel}`;
+            
+            menuContainer.style.display = "none";
+            gameContainer.style.display = "block";
+            
+            desenharTabuleiro();
+            atualizarPainel();
+        }
+
+        function desenharTabuleiro() {
+            tabuleiroDiv.innerHTML = "";
+            for (let i = 1; i <= 9; i++) {
+                let casa = document.createElement("div");
+                casa.classList.add("casa");
+                
+                let restoDaCasa = layoutAtual[i];
+                if (restoDaCasa <= 2) casa.classList.add("facil");
+                else if (restoDaCasa <= 4) casa.classList.add("medio");
+                else casa.classList.add("dificil");
+
+                let dica = document.createElement("div");
+                dica.classList.add("dica-resto");
+                dica.innerText = "R " + restoDaCasa;
+                casa.appendChild(dica);
+
+                if (board[i] !== "") {
+                    casa.classList.add("ocupada");
+                    casa.innerHTML = board[i]; 
+                }
+
+                casa.onclick = () => tentarMarcarCasa(i, restoDaCasa);
+                tabuleiroDiv.appendChild(casa);
+            }
+        }
+
+        function atualizarPainel() {
+            let jogadorAtual = jogadores[turno % 2];
+            status.innerText = `=== VEZ DO JOGADOR ${jogadorAtual} ===`;
+
+            if (estadoAtual === "DIVIDENDO") {
+                painel.innerHTML = `
+                    <p>Defina o seu Dividendo (Mínimo 6):</p>
+                    <input type="number" id="inputDividendo" min="6" placeholder="Ex: 15">
+                    <button onclick="rolarDados()">Lançar Dados</button>
+                    <p id="erroPainel" style="color:red; font-size:0.9em;"></p>
+                `;
+            } 
+            else if (estadoAtual === "DIVISOR") {
+                painel.innerHTML = `
+                    <p>Dividendo Escolhido: <strong>${dividendoAtual}</strong></p>
+                    <p>Escolha o Divisor clicando no dado:</p>
+                    <button class="btn-dado" onclick="escolherDivisor(${dadosSorteados[0]})">🎲 ${dadosSorteados[0]}</button>
+                    <button class="btn-dado" onclick="escolherDivisor(${dadosSorteados[1]})">🎲 ${dadosSorteados[1]}</button>
+                `;
+            }
+            else if (estadoAtual === "RESTO") {
+                painel.innerHTML = `
+                    <p>Calcule de cabeça: <strong>${dividendoAtual} ÷ ${divisorEscolhido}</strong></p>
+                    <input type="number" id="inputResto" placeholder="Resto?">
+                    <button onclick="verificarResto()">Confirmar Resto</button>
+                    <p id="erroPainel" style="color:red; font-size:0.9em;"></p>
+                `;
+            }
+            else if (estadoAtual === "CASA") {
+                painel.innerHTML = `
+                    <p style="color: #27ae60; font-weight: bold;">✅ Resto Correto: ${restoCorreto}!</p>
+                    <p>Clique em uma casa do tabuleiro que possua o <strong>Resto ${restoCorreto}</strong>.</p>
+                `;
+            }
+        }
+
+        function rolarDados() {
+            let val = parseInt(document.getElementById("inputDividendo").value);
+            let erro = document.getElementById("erroPainel");
+            
+            if (isNaN(val) || val < 6) {
+                erro.innerText = "⚠️ O dividendo deve ser 6 ou maior.";
+                return;
+            }
+            
+            dividendoAtual = val;
+            dadosSorteados = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+            estadoAtual = "DIVISOR";
+            atualizarPainel();
+        }
+
+        function escolherDivisor(valor) {
+            divisorEscolhido = valor;
+            restoCorreto = dividendoAtual % divisorEscolhido;
+            estadoAtual = "RESTO";
+            atualizarPainel();
+        }
+
+        function verificarResto() {
+            let resposta = parseInt(document.getElementById("inputResto").value);
+            let erro = document.getElementById("erroPainel");
+
+            if (isNaN(resposta)) {
+                erro.innerText = "Digite um número!";
+                return;
+            }
+
+            if (resposta !== restoCorreto) {
+                alert(`❌ Errado! O resto de ${dividendoAtual} ÷ ${divisorEscolhido} é ${restoCorreto}. Você perdeu a vez!`);
+                passarTurno();
+            } else {
+                let temVaga = false;
+                for (let i = 1; i <= 9; i++) {
+                    if (layoutAtual[i] === restoCorreto && board[i] === "") temVaga = true;
+                }
+
+                if (!temVaga) {
+                    alert(`Puxa! Todas as casas para o resto ${restoCorreto} já estão ocupadas no tabuleiro. Perdeu a vez.`);
+                    passarTurno();
+                } else {
+                    estadoAtual = "CASA";
+                    atualizarPainel();
+                }
+            }
+        }
+
+        function tentarMarcarCasa(posicao, restoDaCasa) {
+            if (estadoAtual !== "CASA") return; 
+
+            if (board[posicao] !== "") {
+                alert("⚠️ Esta casa já está ocupada!");
+                return;
+            }
+
+            if (restoDaCasa !== restoCorreto) {
+                alert(`⚠️ Erro Estratégico! Você calculou o resto ${restoCorreto}, mas clicou na casa do resto ${restoDaCasa}.`);
+                return;
+            }
+
+            let jogadorAtual = jogadores[turno % 2];
+            board[posicao] = jogadorAtual;
+            desenharTabuleiro();
+
+            if (verificarVitoria(jogadorAtual)) {
+                status.innerText = `🏆 PARABÉNS! O Jogador ${jogadorAtual} VENCEU!`;
+                painel.innerHTML = `<button onclick="location.reload()">Voltar ao Menu</button>`;
+                estadoAtual = "FIM";
+            } else if (!Object.values(board).includes("")) {
+                status.innerText = `🤝 DEU VELHA! Fim de jogo.`;
+                painel.innerHTML = `<button onclick="location.reload()">Voltar ao Menu</button>`;
+                estadoAtual = "FIM";
+            } else {
+                passarTurno();
+            }
+        }
+
+        function passarTurno() {
+            turno++;
+            estadoAtual = "DIVIDENDO";
+            atualizarPainel();
+        }
+
+        function verificarVitoria(jogador) {
+            const linhas = [
+                [1,2,3], [4,5,6], [7,8,9], 
+                [1,4,7], [2,5,8], [3,6,9], 
+                [1,5,9], [3,5,7]           
+            ];
+            for (let linha of linhas) {
+                if (board[linha[0]] === jogador && board[linha[1]] === jogador && board[linha[2]] === jogador) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>
